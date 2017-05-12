@@ -5,7 +5,7 @@
 #MaxHotkeysPerInterval, 200
 SetWorkingDir, %A_ScriptDir%
 
-Global exe = "redshift.exe", ini = "rstray.ini", s = "Redshift", lat, lon, day, night
+Global exe = "redshift.exe", ini = "rstray.ini", s = "Redshift", lat, lon, day, night, args
 IniRead, lat, %ini%, %s%, latitude
 IniRead, lon, %ini%, %s%, longitude
 IniRead, day, %ini%, %s%, daytemp, 6500
@@ -15,6 +15,7 @@ IniRead, hotkeys, %ini%, %s%, optionalhotkeys, 0
 IniRead, traveling, %ini%, %s%, traveling, 0
 IniRead, colorizecursor, %ini%, %s%, colorizecursor, 0
 IniRead, runasadmin, %ini%, %s%, runasadmin, 0
+IniRead, args, %ini%, %s%, args
 Global mode, timer, temperature, rundialog, brightness = 1, withcaption := Object()
 
 If runasadmin And !A_IsAdmin
@@ -53,6 +54,8 @@ Enable:
 	Menu, Tray, Check, &Enabled
 	Menu, Tray, Default, &Disabled
 	Menu, Tray, Icon, %A_ScriptFullPath%, 1, 1
+	If (args = "ERROR")
+		IniWrite , %ini%, %s%, args
 	If traveling Or (lat = "ERROR" Or lon = "ERROR")
 		GetLocation()
 	If (lat = "ERROR" Or lon = "ERROR")
@@ -191,6 +194,7 @@ Settings:
 	IniWrite, %colorizecursor%, %ini%, %s%, colorizecursor
 	IniWrite, %hotkeys%, %ini%, %s%, optionalhotkeys
 	IniWrite, %runasadmin%, %ini%, %s%, runasadmin
+	IniWrite, %args%, %ini%, %s%, args
 	FileGetTime, modtime, %ini%
 	RunWait, %ini%
 	FileGetTime, newmodtime, %ini%
@@ -253,7 +257,7 @@ Restore() {
 }
 
 Run(adjust = FALSE) {
-	br := brightness>1 ? "-g " . brightness : "-b " . brightness
+	; br := brightness>1 ? "-g " . brightness : "-b " . brightness
 	If mode = enabled
 		cfg = -l %lat%:%lon% -t %day%:%night% %br%
 	Else If mode = forced
@@ -267,7 +271,7 @@ Run(adjust = FALSE) {
 		cfg = %cfg% -r
 	Else
 		Restore()
-	Run, %exe% %cfg%,,Hide
+	Run, %exe% %args% %cfg%,,Hide
 	TrayTip()
 }
 
@@ -286,7 +290,7 @@ TrayTip() {
 	Else
 		status = Disabled
 	br := Round(brightness * 100, 0)
-	Menu, Tray, Tip, Redshift`n%status%`nBrightness = %br%`%
+	Menu, Tray, Tip, Redshift`n%status%`nBrightness = %br%`%`nArgs = %args%
 }
 
 Brightness(value) {
